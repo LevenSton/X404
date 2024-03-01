@@ -1,0 +1,275 @@
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.17;
+
+import {ERC404} from "./ERC404.sol";
+import {IX404Hub} from "./interfaces/IX404Hub.sol";
+import {IPeripheryImmutableState} from "./interfaces/IPeripheryImmutableState.sol";
+import {DataTypes} from "./lib/DataTypes.sol";
+import {Errors} from "./lib/Errors.sol";
+import {Events} from "./lib/Events.sol";
+import {LibCaculatePair} from "./lib/LibCaculatePair.sol";
+import {X404Storage} from "./storage/X404Storage.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IERC721Metadata} from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
+import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
+contract X404 is IERC721Receiver, ERC404, Ownable, X404Storage {
+    using EnumerableSet for EnumerableSet.UintSet;
+
+    address public immutable creator;
+    address public immutable blueChipNftAddr;
+    address public immutable factory;
+
+    modifier onlyFactory() {
+        if (msg.sender != factory) {
+            revert Errors.OnlyCallByFactory();
+        }
+        _;
+    }
+
+    constructor() Ownable(msg.sender) {
+        decimals = 18;
+        units = 10000 ** 18;
+        (blueChipNftAddr, creator, maxRedeemDeadline) = IX404Hub(msg.sender)
+            ._parameters();
+        address newOwner = IX404Hub(msg.sender).owner();
+        string memory oriName = IERC721Metadata(blueChipNftAddr).name();
+        string memory oriSymbol = IERC721Metadata(blueChipNftAddr).symbol();
+        name = string.concat("X404-", oriName);
+        symbol = string.concat("X404-", oriSymbol);
+        DataTypes.SwapRouter[] memory swapRouterStruct = IX404Hub(msg.sender)
+            .getSwapRouter();
+        _setRouterTransferExempt(swapRouterStruct);
+        _setERC721TransferExempt(address(this), true);
+        factory = msg.sender;
+        _transferOwnership(newOwner);
+    }
+
+    function depositSubjectMatter(
+        uint256[] calldata tokenIds,
+        uint256 redeemDeadline
+    ) external {
+        if (
+            redeemDeadline < block.timestamp ||
+            redeemDeadline > block.timestamp + maxRedeemDeadline
+        ) {
+            revert Errors.DeadLineInvaild();
+        }
+        for (uint256 i = 0; i < tokenIds.length; ) {
+            IERC721Metadata(blueChipNftAddr).transferFrom(
+                msg.sender,
+                address(this),
+                tokenIds[i]
+            );
+            _transferERC20WithERC721(address(0), msg.sender, units);
+            if (tokenIdSet.add(tokenIds[i])) {
+                SubjectMatterInfo storage subInfo = subjectInfo[tokenIds[i]];
+                subInfo.caller = msg.sender;
+                subInfo.oriOwner = msg.sender;
+                subInfo.redeemDeadline = redeemDeadline;
+            } else {
+                revert Errors.InvalidTokenId();
+            }
+            emit Events.X404ReceiptNFT(
+                msg.sender,
+                msg.sender,
+                tokenIds[i],
+                redeemDeadline
+            );
+            unchecked {
+                i++;
+            }
+        }
+    }
+
+    function redeemSubjectMatterByOriOwner(
+        uint256[] calldata tokenIds
+    ) external {
+        uint256 len = tokenIds.length;
+        if (len == 0) {
+            revert Errors.InvaildLength();
+        }
+
+        _transferERC20WithERC721(msg.sender, address(0), units * len);
+        for (uint256 i = 0; i < tokenIds.length; ) {
+            if (subjectInfo[tokenIds[i]].oriOwner != msg.sender) {
+                revert Errors.NotNFTOriginOwner();
+            }
+            IERC721Metadata(blueChipNftAddr).safeTransferFrom(
+                address(this),
+                msg.sender,
+                tokenIds[i]
+            );
+            delete subjectInfo[tokenIds[i]];
+            if (!tokenIdSet.remove(tokenIds[i])) {
+                revert Errors.RemoveFailed();
+            }
+            unchecked {
+                i++;
+            }
+        }
+    }
+
+    function redeemSubjectMatterRandom(uint256 amount) external {
+        if (amount == 0) {
+            revert Errors.InvaildParam();
+        }
+        _transferERC20WithERC721(msg.sender, address(0), units * amount);
+
+        uint256[] memory redeemIds;
+        uint256 index = 0;
+        for (uint256 i = 0; i < tokenIdSet.length(); ) {
+            uint256 tokenId = tokenIdSet.at(i);
+            if (subjectInfo[tokenId].redeemDeadline < block.timestamp) {
+                IERC721Metadata(blueChipNftAddr).safeTransferFrom(
+                    address(this),
+                    msg.sender,
+                    tokenId
+                );
+                delete subjectInfo[tokenId];
+                redeemIds[index] = tokenId;
+                index++;
+            }
+            unchecked {
+                i++;
+            }
+        }
+        uint256 len = redeemIds.length;
+        if (len != amount) {
+            revert Errors.NotEnoughValiedSubjectMatterToSend();
+        }
+        for (uint256 j = 0; j < len; ) {
+            if (!tokenIdSet.remove(redeemIds[j])) {
+                revert Errors.RemoveFailed();
+            }
+        }
+    }
+
+    function onERC721Received(
+        address caller,
+        address from,
+        uint256 tokenId,
+        bytes calldata data
+    ) external returns (bytes4) {
+        if (msg.sender != blueChipNftAddr) {
+            revert Errors.ErrorNFTAddress();
+        }
+        uint256 redeemDeadline = abi.decode(data, (uint256));
+        if (
+            redeemDeadline < block.timestamp ||
+            redeemDeadline > block.timestamp + maxRedeemDeadline
+        ) {
+            revert Errors.DeadLineInvaild();
+        }
+        _transferERC20WithERC721(address(0), from, units);
+        if (tokenIdSet.add(tokenId)) {
+            SubjectMatterInfo storage subInfo = subjectInfo[tokenId];
+            subInfo.caller = caller;
+            subInfo.oriOwner = from;
+            subInfo.redeemDeadline = redeemDeadline;
+        } else {
+            revert Errors.InvalidTokenId();
+        }
+        emit Events.X404ReceiptNFT(caller, from, tokenId, redeemDeadline);
+
+        return IERC721Receiver.onERC721Received.selector;
+    }
+
+    /**************Only Call By Factory Function **********/
+
+    function setContractURI(
+        string calldata newContractUri
+    ) public onlyFactory returns (bool) {
+        contractURI = newContractUri;
+        return true;
+    }
+
+    function setTokenURI(string calldata _tokenURI) public onlyFactory {
+        baseTokenURI = _tokenURI;
+    }
+
+    function tokenURI(uint256 id) public view override returns (string memory) {
+        return string.concat(baseTokenURI, Strings.toString(id));
+    }
+
+    /**************Internal Function **********/
+    function _setRouterTransferExempt(
+        DataTypes.SwapRouter[] memory swapRouterStruct
+    ) internal {
+        address thisAddress = address(this);
+        for (uint i = 0; i < swapRouterStruct.length; ) {
+            address routerAddr = swapRouterStruct[i].routerAddr;
+            if (routerAddr == address(0)) {
+                revert Errors.CantBeZeroAddress();
+            }
+            _setERC721TransferExempt(routerAddr, true);
+
+            address weth_ = IPeripheryImmutableState(routerAddr).WETH9();
+            address swapFactory = IPeripheryImmutableState(routerAddr)
+                .factory();
+            (address token0, address token1) = thisAddress < weth_
+                ? (thisAddress, weth_)
+                : (weth_, thisAddress);
+
+            if (swapRouterStruct[i].bV2orV3) {
+                address pair = LibCaculatePair._getUniswapV2Pair(
+                    swapFactory,
+                    token0,
+                    token1
+                );
+                _setERC721TransferExempt(pair, true);
+            } else {
+                address v3NonfungiblePositionManager = swapRouterStruct[i]
+                    .uniswapV3NonfungiblePositionManager;
+                if (v3NonfungiblePositionManager == address(0)) {
+                    revert Errors.CantBeZeroAddress();
+                }
+                if (
+                    IPeripheryImmutableState(v3NonfungiblePositionManager)
+                        .factory() !=
+                    swapFactory ||
+                    IPeripheryImmutableState(v3NonfungiblePositionManager)
+                        .WETH9() !=
+                    weth_
+                ) {
+                    revert Errors.X404SwapV3FactoryMismatch();
+                }
+                _setERC721TransferExempt(v3NonfungiblePositionManager, true);
+                _setV3SwapTransferExempt(swapFactory, token0, token1);
+            }
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    function _setV3SwapTransferExempt(
+        address swapFactory,
+        address token0,
+        address token1
+    ) internal {
+        uint24[4] memory feeTiers = [
+            uint24(100),
+            uint24(500),
+            uint24(3_000),
+            uint24(10_000)
+        ];
+
+        for (uint256 i = 0; i < feeTiers.length; ) {
+            address v3PairAddr = LibCaculatePair._getUniswapV3Pair(
+                swapFactory,
+                token0,
+                token1,
+                feeTiers[i]
+            );
+            // Set the v3 pair as exempt.
+            _setERC721TransferExempt(v3PairAddr, true);
+            unchecked {
+                ++i;
+            }
+        }
+    }
+}
