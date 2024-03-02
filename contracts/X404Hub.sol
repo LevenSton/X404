@@ -18,9 +18,9 @@ contract X404Hub is OwnableUpgradeable, X404HubStorage {
         _;
     }
 
-    constructor() {
-        _disableInitializers();
-    }
+    // constructor() {
+    //     _disableInitializers();
+    // }
 
     function initialize(
         address owner,
