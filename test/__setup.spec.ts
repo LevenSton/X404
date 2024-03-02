@@ -64,14 +64,9 @@ before(async function () {
   const proxy = await upgrades.deployProxy(X404Hub, [deployerAddress, 24 * 60 * 60, swapRouterArray]);
   const proxyAddress = await proxy.getAddress()
   console.log("proxy address: ", proxyAddress)
+  console.log("admin address: ", await upgrades.erc1967.getAdminAddress(proxyAddress))
+  console.log("implement address: ", await upgrades.erc1967.getImplementationAddress(proxyAddress))
   x404Hub = X404Hub__factory.connect(proxyAddress)
-  //x404Hub = await new X404Hub__factory(deployer).deploy();
-  //expect(x404Hub).to.not.be.undefined;
-
-  // await expect(x404Hub.connect(deployer).initialize(deployerAddress, 0, swapRouterArray)).to.be.revertedWithCustomError(x404Hub, ERRORS.InvaildRedeemMaxDeadline)
-
-  //await expect(x404Hub.connect(deployer).initialize(deployerAddress, 24 * 60 * 60, swapRouterArray)).to.not.be.reverted
-
   await expect(x404Hub.connect(owner).SetBlueChipNftContract([ownerAddress], true)).to.be.reverted
   await expect(x404Hub.connect(owner).setSwapRouter([])).to.be.reverted
   await expect(x404Hub.connect(owner).setNewRedeemDeadline(10000)).to.be.reverted
