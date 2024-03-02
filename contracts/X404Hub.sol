@@ -9,13 +9,13 @@ import {Events} from "./lib/Events.sol";
 import {X404} from "./X404.sol";
 
 contract X404Hub is OwnableUpgradeable, X404HubStorage {
-    modifier checkPermission() {
+    modifier checkPermission(address nftContractAddress) {
         if (_emergencyClose) {
             revert Errors.EmergencyClose();
         }
         if (!_bNoPermission) {
-            if (msg.sender != owner()) {
-                revert Errors.NoPermission();
+            if (!_blueChipNftContract[nftContractAddress]) {
+                revert Errors.NotBlueChipNFT();
             }
         }
         if (redeemMaxDeadline == 0) {
@@ -31,9 +31,12 @@ contract X404Hub is OwnableUpgradeable, X404HubStorage {
     function initialize(
         address owner,
         uint256 maxRedeemDeadline,
-        DataTypes.SwapRouter[] memory swapRouterAddr
+        DataTypes.SwapRouter[] calldata swapRouterAddr
     ) public initializer {
         __Ownable_init(owner);
+        if (maxRedeemDeadline == 0) {
+            revert Errors.NotInitialized();
+        }
         for (uint256 i = 0; i < swapRouterAddr.length; i++) {
             _swapRouterAddr.push(swapRouterAddr[i]);
         }
@@ -42,10 +45,7 @@ contract X404Hub is OwnableUpgradeable, X404HubStorage {
 
     function createX404(
         address nftContractAddress
-    ) external checkPermission returns (address x404) {
-        if (!_blueChipNftContract[nftContractAddress]) {
-            revert Errors.NotBlueChipNFT(nftContractAddress);
-        }
+    ) external checkPermission(nftContractAddress) returns (address x404) {
         _parameters = DataTypes.CreateX404Parameters({
             nftContractAddr: nftContractAddress,
             creator: msg.sender,
@@ -89,6 +89,21 @@ contract X404Hub is OwnableUpgradeable, X404HubStorage {
         delete _swapRouterAddr;
         for (uint256 i = 0; i < swapRouterAddr.length; ) {
             _swapRouterAddr.push(swapRouterAddr[i]);
+            unchecked {
+                i++;
+            }
+        }
+    }
+
+    function SetBlueChipNftContract(
+        address[] memory contractAddrs,
+        bool state
+    ) public onlyOwner {
+        for (uint256 i = 0; i < contractAddrs.length; ) {
+            if (contractAddrs[i] == address(0x0)) {
+                revert Errors.CantBeZeroAddress();
+            }
+            _blueChipNftContract[contractAddrs[i]] = state;
             unchecked {
                 i++;
             }

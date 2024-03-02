@@ -7,8 +7,7 @@ library Errors {
     error InvaildParam();
     error OnlyCallByFactory();
     error NotFound();
-    error NoPermission();
-    error NotBlueChipNFT(address nftContractAddr);
+    error NotBlueChipNFT();
     error X404NotCreate();
     error CantBeZeroAddress();
     error X404SwapV3FactoryMismatch();
