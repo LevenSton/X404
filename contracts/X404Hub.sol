@@ -18,6 +18,10 @@ contract X404Hub is OwnableUpgradeable, X404HubStorage {
         _;
     }
 
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize(
         address owner,
         uint256 maxRedeemDeadline,

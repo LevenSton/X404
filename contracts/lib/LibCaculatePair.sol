@@ -6,7 +6,7 @@ library LibCaculatePair {
         address uniswapV2Factory_,
         address tokenA,
         address tokenB
-    ) public pure returns (address) {
+    ) internal pure returns (address) {
         (address token0, address token1) = tokenA < tokenB
             ? (tokenA, tokenB)
             : (tokenB, tokenA);
@@ -32,7 +32,7 @@ library LibCaculatePair {
         address tokenA,
         address tokenB,
         uint24 fee_
-    ) public pure returns (address) {
+    ) internal pure returns (address) {
         (address token0, address token1) = tokenA < tokenB
             ? (tokenA, tokenB)
             : (tokenB, tokenA);
