@@ -18,4 +18,6 @@ library Errors {
     error NotNFTOriginOwner();
     error RemoveFailed();
     error NotEnoughValiedSubjectMatterToSend();
+    error EmergencyClose();
+    error NotInitialized();
 }

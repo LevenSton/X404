@@ -5,6 +5,7 @@ import {DataTypes} from "../lib/DataTypes.sol";
 abstract contract X404HubStorage {
     DataTypes.CreateX404Parameters public _parameters;
     bool public _bNoPermission;
+    bool public _emergencyClose;
     uint256 public redeemMaxDeadline;
     DataTypes.SwapRouter[] public _swapRouterAddr;
     mapping(address => bool) public _blueChipNftContract;

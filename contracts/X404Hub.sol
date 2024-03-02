@@ -10,10 +10,16 @@ import {X404} from "./X404.sol";
 
 contract X404Hub is OwnableUpgradeable, X404HubStorage {
     modifier checkPermission() {
+        if (_emergencyClose) {
+            revert Errors.EmergencyClose();
+        }
         if (!_bNoPermission) {
             if (msg.sender != owner()) {
                 revert Errors.NoPermission();
             }
+        }
+        if (redeemMaxDeadline == 0) {
+            revert Errors.NotInitialized();
         }
         _;
     }
