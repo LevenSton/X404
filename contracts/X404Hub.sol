@@ -2,14 +2,13 @@
 pragma solidity ^0.8.17;
 
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {X404HubStorage} from "./storage/X404HubStorage.sol";
 import {DataTypes} from "./lib/DataTypes.sol";
 import {Errors} from "./lib/Errors.sol";
 import {Events} from "./lib/Events.sol";
 import {X404} from "./X404.sol";
 
-contract X404Hub is Initializable, OwnableUpgradeable, X404HubStorage {
+contract X404Hub is OwnableUpgradeable, X404HubStorage {
     modifier checkPermission() {
         if (!_bNoPermission) {
             if (msg.sender != owner()) {
@@ -74,11 +73,17 @@ contract X404Hub is Initializable, OwnableUpgradeable, X404HubStorage {
         redeemMaxDeadline = newDeadline;
     }
 
-    // function setSwapRouter(
-    //     DataTypes.SwapRouter[] memory swapRouterAddr
-    // ) public onlyOwner {
-    //     _swapRouterAddr = swapRouterAddr;
-    // }
+    function setSwapRouter(
+        DataTypes.SwapRouter[] memory swapRouterAddr
+    ) public onlyOwner {
+        delete _swapRouterAddr;
+        for (uint256 i = 0; i < swapRouterAddr.length; ) {
+            _swapRouterAddr.push(swapRouterAddr[i]);
+            unchecked {
+                i++;
+            }
+        }
+    }
 
     function getSwapRouter()
         public
