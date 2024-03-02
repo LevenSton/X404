@@ -18,5 +18,5 @@ library Errors {
     error RemoveFailed();
     error NotEnoughValiedSubjectMatterToSend();
     error EmergencyClose();
-    error NotInitialized();
+    error InvaildRedeemMaxDeadline();
 }

@@ -27,9 +27,12 @@ makeSuiteCleanRoom('create X404', function () {
                 await expect(x404Hub.connect(owner).createX404(nft0Addr)).to.be.revertedWithCustomError(x404Hub, ERRORS.NotBlueChipNFT)
             });
             it('User should fail to create if redeemMaxDeadline not initialized.',   async function () {
-                await expect(x404Hub.connect(deployer).SetBlueChipNftContract([nft0Addr], true)).to.be.not.reverted
-                //await x404Hub.connect(deployer).SetBlueChipNftContract([nft0Addr], true)
-                //await expect(x404Hub.connect(owner).createX404(nft0Addr)).to.be.revertedWithCustomError(x404Hub, ERRORS.NotBlueChipNFT)
+                await expect(x404Hub.connect(deployer).SetBlueChipNftContract([blueChipAddr], true)).to.be.not.reverted
+                await expect(x404Hub.connect(deployer).setNewRedeemDeadline(0)).to.be.revertedWithCustomError(x404Hub, ERRORS.InvaildRedeemMaxDeadline)
+            });
+            it('User should fail to create if emergce closed.',   async function () {
+                await expect(x404Hub.connect(deployer).emergencyClose(true)).to.be.not.reverted
+                await expect(x404Hub.connect(deployer).createX404(blueChipAddr)).to.be.revertedWithCustomError(x404Hub, ERRORS.EmergencyClose)
             });
         })
 

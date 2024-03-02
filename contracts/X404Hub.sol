@@ -19,7 +19,7 @@ contract X404Hub is OwnableUpgradeable, X404HubStorage {
             }
         }
         if (redeemMaxDeadline == 0) {
-            revert Errors.NotInitialized();
+            revert Errors.InvaildRedeemMaxDeadline();
         }
         _;
     }
@@ -35,7 +35,7 @@ contract X404Hub is OwnableUpgradeable, X404HubStorage {
     ) public initializer {
         __Ownable_init(owner);
         if (maxRedeemDeadline == 0) {
-            revert Errors.NotInitialized();
+            revert Errors.InvaildRedeemMaxDeadline();
         }
         for (uint256 i = 0; i < swapRouterAddr.length; i++) {
             _swapRouterAddr.push(swapRouterAddr[i]);
@@ -80,6 +80,9 @@ contract X404Hub is OwnableUpgradeable, X404HubStorage {
     }
 
     function setNewRedeemDeadline(uint256 newDeadline) public onlyOwner {
+        if (newDeadline == 0) {
+            revert Errors.InvaildRedeemMaxDeadline();
+        }
         redeemMaxDeadline = newDeadline;
     }
 
@@ -93,6 +96,10 @@ contract X404Hub is OwnableUpgradeable, X404HubStorage {
                 i++;
             }
         }
+    }
+
+    function emergencyClose(bool bClose) public onlyOwner {
+        _emergencyClose = bClose;
     }
 
     function SetBlueChipNftContract(

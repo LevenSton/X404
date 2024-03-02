@@ -1,7 +1,7 @@
 
 import { expect } from 'chai';
-import { Signer } from 'ethers';
-import { ethers } from 'hardhat';
+import { Signer, ZeroAddress } from 'ethers';
+import { ethers, upgrades } from 'hardhat';
 import {
   X404Hub__factory,
   X404Hub,
@@ -12,6 +12,7 @@ import {
   revertToSnapshot,
   takeSnapshot
 } from './helpers/utils';
+import { ERRORS } from './helpers/errors';
 
 export let accounts: Signer[];
 export let deployer: Signer;
@@ -51,21 +52,32 @@ before(async function () {
   userTwoAddress = await userTwo.getAddress();
   ownerAddress = await owner.getAddress();
 
-  x404Hub = await new X404Hub__factory(deployer).deploy();
+  const swapRouterArray = [
+    {
+      bV2orV3: true,
+      routerAddr: '0x3512ebD0Eb455f2FFDE4908D24F64aba7995951C',
+      uniswapV3NonfungiblePositionManager: ZeroAddress,
+    },
+  ];
+  
+  const X404Hub = await ethers.getContractFactory("X404Hub");
+  const proxy = await upgrades.deployProxy(X404Hub, [deployerAddress, 24 * 60 * 60, swapRouterArray]);
+  const proxyAddress = await proxy.getAddress()
+  console.log("proxy address: ", proxyAddress)
+  x404Hub = X404Hub__factory.connect(proxyAddress)
+  //x404Hub = await new X404Hub__factory(deployer).deploy();
+  //expect(x404Hub).to.not.be.undefined;
+
+  // await expect(x404Hub.connect(deployer).initialize(deployerAddress, 0, swapRouterArray)).to.be.revertedWithCustomError(x404Hub, ERRORS.InvaildRedeemMaxDeadline)
+
+  //await expect(x404Hub.connect(deployer).initialize(deployerAddress, 24 * 60 * 60, swapRouterArray)).to.not.be.reverted
+
   await expect(x404Hub.connect(owner).SetBlueChipNftContract([ownerAddress], true)).to.be.reverted
   await expect(x404Hub.connect(owner).setSwapRouter([])).to.be.reverted
   await expect(x404Hub.connect(owner).setNewRedeemDeadline(10000)).to.be.reverted
   await expect(x404Hub.connect(owner).setContractURI(ownerAddress, "as")).to.be.reverted
   await expect(x404Hub.connect(owner).setTokenURI(ownerAddress, "asd")).to.be.reverted
 
-  const paramArr = {
-    bV2orV3: true,
-    routerAddr: "0x3512ebD0Eb455f2FFDE4908D24F64aba7995951C",
-    uniswapV3NonfungiblePositionManager: ""
-  }
-  await expect(x404Hub.connect(deployer).initialize(deployerAddress, 24 * 60 * 60, [])).to.not.be.reverted
-
-  expect(x404Hub).to.not.be.undefined;
 
   eventsLib = await new Events__factory(deployer).deploy();
 });
