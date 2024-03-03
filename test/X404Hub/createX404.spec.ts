@@ -63,13 +63,15 @@ makeSuiteCleanRoom('create X404', function () {
                 const x404Address = event!.args[0];
                 expect(await x404Hub.connect(deployer)._x404Contract(blueChipAddr)).to.equal(x404Address)
 
-                expect(await x404Hub.connect(owner).setContractURI(blueChipAddr, ContractURI)).to.be.not.reverted
-                
                 const x404 = X404__factory.connect(x404Address)
+                expect(await x404Hub.connect(owner).setContractURI(blueChipAddr, ContractURI)).to.be.not.reverted
                 expect(await x404.connect(owner).contractURI()).to.equal(ContractURI)
 
                 expect(await x404Hub.connect(owner).setTokenURI(blueChipAddr, TokenURI)).to.be.not.reverted
                 expect(await x404.connect(owner).baseTokenURI()).to.equal(TokenURI)
+
+                expect(await x404Hub.connect(owner).setNewRedeemDeadline(7 * 24 * 3600)).to.be.not.reverted
+                expect(await x404Hub.connect(owner).redeemMaxDeadline()).to.equal(7 * 24 * 3600)
             });
         })
     })
