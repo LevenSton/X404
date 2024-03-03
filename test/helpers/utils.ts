@@ -66,6 +66,16 @@ export async function waitForTx(
   return (await (await tx).wait())!;
 }
 
+export async function getTimestamp(): Promise<any> {
+  const blockNumber = await hre.ethers.provider.send('eth_blockNumber', []);
+  const block = await hre.ethers.provider.send('eth_getBlockByNumber', [blockNumber, false]);
+  return block.timestamp;
+}
+
+export async function setNextBlockTimestamp(timestamp: number): Promise<void> {
+  await hre.ethers.provider.send('evm_setNextBlockTimestamp', [timestamp]);
+}
+
 let snapshotId: string = '0x1';
 export async function takeSnapshot() {
   snapshotId = await hre.ethers.provider.send('evm_snapshot', []);

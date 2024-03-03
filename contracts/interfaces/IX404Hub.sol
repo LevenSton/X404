@@ -6,7 +6,12 @@ interface IX404Hub {
     function _parameters()
         external
         view
-        returns (address blueChipNft, address creator, uint256 deadline);
+        returns (
+            address blueChipNft,
+            address creator,
+            uint256 deadline,
+            uint256 nftUnits
+        );
 
     function owner() external view returns (address owner);
 

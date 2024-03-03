@@ -31,6 +31,7 @@ export let yestoday = parseInt((new Date().getTime() / 1000 ).toFixed(0)) - 24 *
 export let now = parseInt((new Date().getTime() / 1000 ).toFixed(0))
 export let tomorrow2 = parseInt((new Date().getTime() / 1000 ).toFixed(0)) + 2 * 24 * 3600
 export let tomorrow = parseInt((new Date().getTime() / 1000 ).toFixed(0)) + 24 * 3600
+export let nftUnits = 10000
 
 export function makeSuiteCleanRoom(name: string, tests: () => void) {
   describe(name, () => {

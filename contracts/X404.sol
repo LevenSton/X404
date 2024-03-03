@@ -32,9 +32,12 @@ contract X404 is IERC721Receiver, ERC404, Ownable, X404Storage {
 
     constructor() Ownable(msg.sender) {
         decimals = 18;
-        units = 10000 * 10 ** 18;
-        (blueChipNftAddr, creator, maxRedeemDeadline) = IX404Hub(msg.sender)
-            ._parameters();
+        uint256 nftUints;
+        (blueChipNftAddr, creator, maxRedeemDeadline, nftUints) = IX404Hub(
+            msg.sender
+        )._parameters();
+
+        units = nftUints * 10 ** 18;
         address newOwner = IX404Hub(msg.sender).owner();
         string memory oriName = IERC721Metadata(blueChipNftAddr).name();
         string memory oriSymbol = IERC721Metadata(blueChipNftAddr).symbol();

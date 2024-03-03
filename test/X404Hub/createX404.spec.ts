@@ -1,6 +1,6 @@
 
 import {
-    makeSuiteCleanRoom,deployer, x404Hub, owner, deployerAddress, user
+    makeSuiteCleanRoom,deployer, x404Hub, owner, deployerAddress, user, nftUnits
 } from '../__setup.spec';
 import { expect } from 'chai';
 import { ERRORS } from '../helpers/errors';
@@ -26,7 +26,7 @@ makeSuiteCleanRoom('create X404', function () {
         
         context('Negatives', function () {
             it('User should fail to create if nft is not blurchip.',   async function () {
-                await expect(x404Hub.connect(owner).createX404(nft0Addr)).to.be.revertedWithCustomError(x404Hub, ERRORS.NotBlueChipNFT)
+                await expect(x404Hub.connect(owner).createX404(nft0Addr, nftUnits)).to.be.revertedWithCustomError(x404Hub, ERRORS.NotBlueChipNFT)
             });
             it('User should fail to create if redeemMaxDeadline not initialized.',   async function () {
                 await expect(x404Hub.connect(owner).SetBlueChipNftContract([blueChipAddr], true)).to.be.not.reverted
@@ -34,12 +34,12 @@ makeSuiteCleanRoom('create X404', function () {
             });
             it('User should fail to create if emergce closed.',   async function () {
                 await expect(x404Hub.connect(owner).emergencyClose(true)).to.be.not.reverted
-                await expect(x404Hub.connect(owner).createX404(blueChipAddr)).to.be.revertedWithCustomError(x404Hub, ERRORS.EmergencyClose)
+                await expect(x404Hub.connect(owner).createX404(blueChipAddr, nftUnits)).to.be.revertedWithCustomError(x404Hub, ERRORS.EmergencyClose)
             });
             it('User should fail to create if created twice.',   async function () {
                 await expect(x404Hub.connect(owner).SetBlueChipNftContract([blueChipAddr], true)).to.be.not.reverted
-                await expect(x404Hub.connect(owner).createX404(blueChipAddr)).to.be.not.reverted
-                await expect(x404Hub.connect(deployer).createX404(blueChipAddr)).to.be.reverted
+                await expect(x404Hub.connect(owner).createX404(blueChipAddr, nftUnits)).to.be.not.reverted
+                await expect(x404Hub.connect(deployer).createX404(blueChipAddr, nftUnits)).to.be.reverted
             });
         })
 
@@ -48,7 +48,7 @@ makeSuiteCleanRoom('create X404', function () {
                 await expect(x404Hub.connect(owner).SetBlueChipNftContract([blueChipAddr], true)).to.be.not.reverted
                 expect(await x404Hub.connect(owner)._blueChipNftContract(blueChipAddr)).to.equal(true)
 
-                const receipt = await waitForTx(x404Hub.connect(deployer).createX404(blueChipAddr))
+                const receipt = await waitForTx(x404Hub.connect(deployer).createX404(blueChipAddr, nftUnits))
                 const event = findEvent(receipt, 'X404Created');
                 const x404Address = event!.args[0];
                 expect(await x404Hub.connect(deployer)._x404Contract(blueChipAddr)).to.equal(x404Address)
@@ -58,7 +58,7 @@ makeSuiteCleanRoom('create X404', function () {
                 await expect(x404Hub.connect(owner).SetBlueChipNftContract([blueChipAddr], true)).to.be.not.reverted
                 expect(await x404Hub.connect(owner)._blueChipNftContract(blueChipAddr)).to.equal(true)
 
-                const receipt = await waitForTx(x404Hub.connect(deployer).createX404(blueChipAddr))
+                const receipt = await waitForTx(x404Hub.connect(deployer).createX404(blueChipAddr, nftUnits))
                 const event = findEvent(receipt, 'X404Created');
                 const x404Address = event!.args[0];
                 expect(await x404Hub.connect(deployer)._x404Contract(blueChipAddr)).to.equal(x404Address)

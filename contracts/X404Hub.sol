@@ -44,12 +44,14 @@ contract X404Hub is OwnableUpgradeable, X404HubStorage {
     }
 
     function createX404(
-        address nftContractAddress
+        address nftContractAddress,
+        uint256 nftUnits
     ) external checkPermission(nftContractAddress) returns (address x404) {
         _parameters = DataTypes.CreateX404Parameters({
             nftContractAddr: nftContractAddress,
             creator: msg.sender,
-            redeemMaxDeadline: redeemMaxDeadline
+            redeemMaxDeadline: redeemMaxDeadline,
+            nftUnits: nftUnits
         });
         x404 = address(
             new X404{salt: keccak256(abi.encode(nftContractAddress))}()

@@ -1,6 +1,6 @@
 
 import {
-    makeSuiteCleanRoom,deployer, x404Hub, owner, deployerAddress, user, yestoday, tomorrow, tomorrow2, userAddress, abiCoder
+    makeSuiteCleanRoom,deployer, x404Hub, owner, deployerAddress, user, yestoday, tomorrow, tomorrow2, userAddress, abiCoder, nftUnits
 } from '../__setup.spec';
 import { expect } from 'chai';
 import { ERRORS } from '../helpers/errors';
@@ -31,7 +31,7 @@ makeSuiteCleanRoom('depositSubjectMatter', function () {
             await expect(x404Hub.connect(owner).SetBlueChipNftContract([blueChipAddr], true)).to.be.not.reverted
             expect(await x404Hub.connect(owner)._blueChipNftContract(blueChipAddr)).to.equal(true)
 
-            const receipt = await waitForTx(x404Hub.connect(deployer).createX404(blueChipAddr))
+            const receipt = await waitForTx(x404Hub.connect(deployer).createX404(blueChipAddr, nftUnits))
             const event = findEvent(receipt, 'X404Created');
             x404Addr = event!.args[0];
             expect(await x404Hub.connect(deployer)._x404Contract(blueChipAddr)).to.equal(x404Addr)

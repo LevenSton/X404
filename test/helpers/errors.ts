@@ -5,5 +5,7 @@ export const ERRORS = {
     X404NotCreate: "X404NotCreate",
     DeadLineInvaild: "DeadLineInvaild",
     ErrorNFTAddress: "ErrorNFTAddress",
+    InvaildLength: "InvaildLength",
+    NFTCannotRedeem: "NFTCannotRedeem",
 };
   
