@@ -32,7 +32,7 @@ contract X404 is IERC721Receiver, ERC404, Ownable, X404Storage {
 
     constructor() Ownable(msg.sender) {
         decimals = 18;
-        units = 10000 ** 18;
+        units = 10000 * 10 ** 18;
         (blueChipNftAddr, creator, maxRedeemDeadline) = IX404Hub(msg.sender)
             ._parameters();
         address newOwner = IX404Hub(msg.sender).owner();
@@ -58,13 +58,16 @@ contract X404 is IERC721Receiver, ERC404, Ownable, X404Storage {
         ) {
             revert Errors.DeadLineInvaild();
         }
-        for (uint256 i = 0; i < tokenIds.length; ) {
+        uint256 len = tokenIds.length;
+        if (len == 0) {
+            revert Errors.InvaildLength();
+        }
+        for (uint256 i = 0; i < len; ) {
             IERC721Metadata(blueChipNftAddr).transferFrom(
                 msg.sender,
                 address(this),
                 tokenIds[i]
             );
-            _transferERC20WithERC721(address(0), msg.sender, units);
             if (tokenIdSet.add(tokenIds[i])) {
                 SubjectMatterInfo storage subInfo = subjectInfo[tokenIds[i]];
                 subInfo.caller = msg.sender;
@@ -83,20 +86,23 @@ contract X404 is IERC721Receiver, ERC404, Ownable, X404Storage {
                 i++;
             }
         }
+        _transferERC20WithERC721(address(0), msg.sender, len * units);
     }
 
-    function redeemSubjectMatterByOriOwner(
-        uint256[] calldata tokenIds
-    ) external {
+    function redeemSubjectMatter(uint256[] calldata tokenIds) external {
         uint256 len = tokenIds.length;
         if (len == 0) {
             revert Errors.InvaildLength();
         }
 
         _transferERC20WithERC721(msg.sender, address(0), units * len);
+
         for (uint256 i = 0; i < tokenIds.length; ) {
-            if (subjectInfo[tokenIds[i]].oriOwner != msg.sender) {
-                revert Errors.NotNFTOriginOwner();
+            if (
+                subjectInfo[tokenIds[i]].oriOwner != msg.sender &&
+                subjectInfo[tokenIds[i]].redeemDeadline > block.timestamp
+            ) {
+                revert Errors.NFTCannotRedeem();
             }
             IERC721Metadata(blueChipNftAddr).safeTransferFrom(
                 address(this),
@@ -109,41 +115,6 @@ contract X404 is IERC721Receiver, ERC404, Ownable, X404Storage {
             }
             unchecked {
                 i++;
-            }
-        }
-    }
-
-    function redeemSubjectMatterRandom(uint256 amount) external {
-        if (amount == 0) {
-            revert Errors.InvaildParam();
-        }
-        _transferERC20WithERC721(msg.sender, address(0), units * amount);
-
-        uint256[] memory redeemIds;
-        uint256 index = 0;
-        for (uint256 i = 0; i < tokenIdSet.length(); ) {
-            uint256 tokenId = tokenIdSet.at(i);
-            if (subjectInfo[tokenId].redeemDeadline < block.timestamp) {
-                IERC721Metadata(blueChipNftAddr).safeTransferFrom(
-                    address(this),
-                    msg.sender,
-                    tokenId
-                );
-                delete subjectInfo[tokenId];
-                redeemIds[index] = tokenId;
-                index++;
-            }
-            unchecked {
-                i++;
-            }
-        }
-        uint256 len = redeemIds.length;
-        if (len != amount) {
-            revert Errors.NotEnoughValiedSubjectMatterToSend();
-        }
-        for (uint256 j = 0; j < len; ) {
-            if (!tokenIdSet.remove(redeemIds[j])) {
-                revert Errors.RemoveFailed();
             }
         }
     }
@@ -176,6 +147,18 @@ contract X404 is IERC721Receiver, ERC404, Ownable, X404Storage {
         emit Events.X404ReceiptNFT(caller, from, tokenId, redeemDeadline);
 
         return IERC721Receiver.onERC721Received.selector;
+    }
+
+    function getTokenIdSet() external view returns (uint256[] memory) {
+        return tokenIdSet.values();
+    }
+
+    function checkTokenIdExsit(uint256 tokenId) external view returns (bool) {
+        return tokenIdSet.contains(tokenId);
+    }
+
+    function getTokenIdByIndex(uint256 index) external view returns (uint256) {
+        return tokenIdSet.at(index);
     }
 
     /**************Only Call By Factory Function **********/

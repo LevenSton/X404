@@ -1,6 +1,6 @@
 
 import {
-    makeSuiteCleanRoom,deployer, x404Hub, owner, deployerAddress, user, yestoday, tomorrow, tomorrow2
+    makeSuiteCleanRoom,deployer, x404Hub, owner, deployerAddress, user, yestoday, tomorrow, tomorrow2, userAddress
 } from '../__setup.spec';
 import { expect } from 'chai';
 import { ERRORS } from '../helpers/errors';
@@ -56,6 +56,17 @@ makeSuiteCleanRoom('depositSubjectMatter', function () {
         })
 
         context('Scenarios', function () {
+            it('Get correct available if deposit nft success.',   async function () {
+                await blueChipNft.connect(user).setApprovalForAll(x404.getAddress(), true);
+                await expect(x404.connect(user).depositSubjectMatter([0], tomorrow)).to.be.not.reverted
+                expect(await blueChipNft.connect(user).ownerOf(0)).to.equal(await x404.getAddress())
+                
+                const subInfo = await x404.connect(user).subjectInfo(0)
+                expect(subInfo[0]).to.equal(userAddress)
+                expect(subInfo[1]).to.equal(userAddress)
+                expect(subInfo[2]).to.equal(tomorrow)
+                expect(await x404.connect(user).checkTokenIdExsit(0)).to.equal(true)
+            });
         })
     })
 })

@@ -14,7 +14,7 @@ library Errors {
     error ErrorNFTAddress();
     error DeadLineInvaild();
     error InvalidTokenId();
-    error NotNFTOriginOwner();
+    error NFTCannotRedeem();
     error RemoveFailed();
     error NotEnoughValiedSubjectMatterToSend();
     error EmergencyClose();
