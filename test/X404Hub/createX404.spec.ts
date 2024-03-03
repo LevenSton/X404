@@ -9,6 +9,7 @@ import { findEvent, waitForTx } from '../helpers/utils';
 import {
     BlueChipNFT__factory
 } from '../../typechain-types';
+import { ZERO_ADDRESS } from '../helpers/constants';
 
 makeSuiteCleanRoom('create X404', function () {
     context('Generic', function () {
@@ -44,7 +45,11 @@ makeSuiteCleanRoom('create X404', function () {
             it('User should correct varliable if created success.',   async function () {
                 await expect(x404Hub.connect(deployer).SetBlueChipNftContract([blueChipAddr], true)).to.be.not.reverted
                 expect(await x404Hub.connect(deployer)._blueChipNftContract(blueChipAddr)).to.equal(true)
-                expect(await x404Hub.connect(deployer).createX404(blueChipAddr)).to.be.not.reverted
+
+                const receipt = await waitForTx(x404Hub.connect(deployer).createX404(blueChipAddr))
+                const event = findEvent(receipt, 'X404Created');
+                const x404Address = event!.args[0];
+                expect(await x404Hub.connect(deployer)._x404Contract(blueChipAddr)).to.equal(x404Address)
             });
         })
     })

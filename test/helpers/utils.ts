@@ -1,11 +1,11 @@
 
-import { hexlify, keccak256, Contract, toUtf8Bytes } from 'ethers';
+import { hexlify, keccak256, Contract, toUtf8Bytes, TransactionReceipt, TransactionResponse } from 'ethers';
 import { encode } from '@ethersproject/rlp'
 import { expect } from 'chai';
 import { HARDHAT_CHAINID } from './constants';
-import { TransactionReceipt, TransactionResponse } from '@ethersproject/providers';
 import hre from 'hardhat';
 import { eventsLib } from '../__setup.spec';
+import { Events } from '../../typechain-types';
 
 export function getChainId(): number {
   return hre.network.config.chainId || HARDHAT_CHAINID;
@@ -19,7 +19,7 @@ export function computeContractAddress(deployerAddress: string, nonce: number): 
 export function findEvent(
   receipt: TransactionReceipt,
   name: string,
-  eventContract: Contract = eventsLib as unknown as Contract,
+  eventContract: Events = eventsLib,
   emitterAddress?: string
 ) {
   const events = receipt.logs;
@@ -27,11 +27,9 @@ export function findEvent(
   if (events != undefined) {
     // match name from list of events in eventContract, when found, compute the sigHash
     let sigHash: string | undefined;
-    for (const contractEvent of Object.keys(eventContract.interface.getEvent)) {
-      if (contractEvent.startsWith(name) && contractEvent.charAt(name.length) == '(') {
-        sigHash = keccak256(toUtf8Bytes(contractEvent));
-        break;
-      }
+    if(eventContract.interface.hasEvent(name)) {
+      const contractEvent = eventContract.interface.getEvent("X404Created")
+      sigHash = contractEvent.topicHash
     }
     // Throw if the sigHash was not found
     if (!sigHash) {
@@ -65,7 +63,7 @@ export async function waitForTx(
   skipCheck = false
 ): Promise<TransactionReceipt> {
   if (!skipCheck) await expect(tx).to.not.be.reverted;
-  return await (await tx).wait();
+  return (await (await tx).wait())!;
 }
 
 let snapshotId: string = '0x1';

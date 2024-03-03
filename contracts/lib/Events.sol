@@ -2,13 +2,6 @@
 pragma solidity ^0.8.17;
 
 library Events {
-    event SendTomojiToken(
-        address indexed sponsor,
-        string name,
-        uint256 emojiClaimId,
-        uint256 emojiTokenAmount
-    );
-
     event X404Created(
         address indexed addr,
         address indexed blueChipNftAddr,
