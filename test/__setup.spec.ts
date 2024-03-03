@@ -61,17 +61,17 @@ before(async function () {
   ];
   
   const X404Hub = await ethers.getContractFactory("X404Hub");
-  const proxy = await upgrades.deployProxy(X404Hub, [deployerAddress, 24 * 60 * 60, swapRouterArray]);
+  const proxy = await upgrades.deployProxy(X404Hub, [ownerAddress, 24 * 60 * 60, swapRouterArray]);
   const proxyAddress = await proxy.getAddress()
   console.log("proxy address: ", proxyAddress)
   console.log("admin address: ", await upgrades.erc1967.getAdminAddress(proxyAddress))
   console.log("implement address: ", await upgrades.erc1967.getImplementationAddress(proxyAddress))
   x404Hub = X404Hub__factory.connect(proxyAddress)
-  await expect(x404Hub.connect(owner).SetBlueChipNftContract([ownerAddress], true)).to.be.reverted
-  await expect(x404Hub.connect(owner).setSwapRouter([])).to.be.reverted
-  await expect(x404Hub.connect(owner).setNewRedeemDeadline(10000)).to.be.reverted
-  await expect(x404Hub.connect(owner).setContractURI(ownerAddress, "as")).to.be.reverted
-  await expect(x404Hub.connect(owner).setTokenURI(ownerAddress, "asd")).to.be.reverted
+  await expect(x404Hub.connect(deployer).SetBlueChipNftContract([ownerAddress], true)).to.be.reverted
+  await expect(x404Hub.connect(deployer).setSwapRouter([])).to.be.reverted
+  await expect(x404Hub.connect(deployer).setNewRedeemDeadline(10000)).to.be.reverted
+  await expect(x404Hub.connect(deployer).setContractURI(ownerAddress, "as")).to.be.reverted
+  await expect(x404Hub.connect(deployer).setTokenURI(ownerAddress, "asd")).to.be.reverted
 
 
   eventsLib = await new Events__factory(deployer).deploy();

@@ -76,7 +76,7 @@ contract X404Hub is OwnableUpgradeable, X404HubStorage {
         if (_x404Contract[nftContract] == address(0)) {
             revert Errors.X404NotCreate();
         }
-        X404(_x404Contract[nftContract]).setContractURI(newTokenURI);
+        X404(_x404Contract[nftContract]).setTokenURI(newTokenURI);
     }
 
     function setNewRedeemDeadline(uint256 newDeadline) public onlyOwner {
