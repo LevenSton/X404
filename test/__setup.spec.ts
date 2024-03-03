@@ -1,6 +1,6 @@
 
 import { expect } from 'chai';
-import { Signer, ZeroAddress } from 'ethers';
+import { Signer, ZeroAddress, AbiCoder } from 'ethers';
 import { ethers, upgrades } from 'hardhat';
 import {
   X404Hub__factory,
@@ -12,7 +12,6 @@ import {
   revertToSnapshot,
   takeSnapshot
 } from './helpers/utils';
-import { ERRORS } from './helpers/errors';
 
 export let accounts: Signer[];
 export let deployer: Signer;
@@ -25,6 +24,7 @@ export let userAddress: string;
 export let userTwoAddress: string;
 export let x404Hub: X404Hub;
 export let eventsLib: Events;
+export let abiCoder = AbiCoder.defaultAbiCoder();
 
 export const decimals = 18;
 export let yestoday = parseInt((new Date().getTime() / 1000 ).toFixed(0)) - 24 * 3600
@@ -45,6 +45,7 @@ export function makeSuiteCleanRoom(name: string, tests: () => void) {
 }
 
 before(async function () {
+  abiCoder = AbiCoder.defaultAbiCoder();
   accounts = await ethers.getSigners();
   deployer = accounts[0];
   owner = accounts[3];

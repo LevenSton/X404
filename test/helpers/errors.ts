@@ -4,5 +4,6 @@ export const ERRORS = {
     EmergencyClose: "EmergencyClose",
     X404NotCreate: "X404NotCreate",
     DeadLineInvaild: "DeadLineInvaild",
+    ErrorNFTAddress: "ErrorNFTAddress",
 };
   
