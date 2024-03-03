@@ -4,8 +4,7 @@ import {
 } from '../__setup.spec';
 import { expect } from 'chai';
 import { ERRORS } from '../helpers/errors';
-import { ethers } from 'hardhat';
-import { waitForTx } from '../helpers/utils';
+import { findEvent, waitForTx } from '../helpers/utils';
 
 import {
     BlueChipNFT__factory
@@ -34,10 +33,19 @@ makeSuiteCleanRoom('create X404', function () {
                 await expect(x404Hub.connect(deployer).emergencyClose(true)).to.be.not.reverted
                 await expect(x404Hub.connect(deployer).createX404(blueChipAddr)).to.be.revertedWithCustomError(x404Hub, ERRORS.EmergencyClose)
             });
+            it('User should fail to create if created twice.',   async function () {
+                await expect(x404Hub.connect(deployer).SetBlueChipNftContract([blueChipAddr], true)).to.be.not.reverted
+                await expect(x404Hub.connect(deployer).createX404(blueChipAddr)).to.be.not.reverted
+                await expect(x404Hub.connect(deployer).createX404(blueChipAddr)).to.be.reverted
+            });
         })
 
         context('Scenarios', function () {
-            
+            it('User should correct varliable if created success.',   async function () {
+                await expect(x404Hub.connect(deployer).SetBlueChipNftContract([blueChipAddr], true)).to.be.not.reverted
+                expect(await x404Hub.connect(deployer)._blueChipNftContract(blueChipAddr)).to.equal(true)
+                expect(await x404Hub.connect(deployer).createX404(blueChipAddr)).to.be.not.reverted
+            });
         })
     })
 })
