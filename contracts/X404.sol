@@ -5,6 +5,7 @@ pragma solidity ^0.8.17;
 import {ERC404} from "./ERC404.sol";
 import {IX404Hub} from "./interfaces/IX404Hub.sol";
 import {IPeripheryImmutableState} from "./interfaces/IPeripheryImmutableState.sol";
+import {IUniswapV2Router} from "./interfaces/IUniswapV2Router.sol";
 import {DataTypes} from "./lib/DataTypes.sol";
 import {Errors} from "./lib/Errors.sol";
 import {Events} from "./lib/Events.sol";
@@ -193,11 +194,9 @@ contract X404 is IERC721Receiver, ERC404, Ownable, X404Storage {
             }
             _setERC721TransferExempt(routerAddr, true);
 
-            address weth_ = IPeripheryImmutableState(routerAddr).WETH9();
-            address swapFactory = IPeripheryImmutableState(routerAddr)
-                .factory();
-
             if (swapRouterStruct[i].bV2orV3) {
+                address weth_ = IUniswapV2Router(routerAddr).WETH();
+                address swapFactory = IUniswapV2Router(routerAddr).factory();
                 address pair = LibCaculatePair._getUniswapV2Pair(
                     swapFactory,
                     thisAddress,
@@ -205,6 +204,9 @@ contract X404 is IERC721Receiver, ERC404, Ownable, X404Storage {
                 );
                 _setERC721TransferExempt(pair, true);
             } else {
+                address weth_ = IPeripheryImmutableState(routerAddr).WETH9();
+                address swapFactory = IPeripheryImmutableState(routerAddr)
+                    .factory();
                 address v3NonfungiblePositionManager = swapRouterStruct[i]
                     .uniswapV3NonfungiblePositionManager;
                 if (v3NonfungiblePositionManager == address(0)) {
