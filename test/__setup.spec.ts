@@ -6,7 +6,8 @@ import {
   X404Hub__factory,
   X404Hub,
   Events,
-  Events__factory
+  Events__factory,
+  MockUniswapV2Router02__factory
 } from '../typechain-types';
 import {
   revertToSnapshot,
@@ -58,10 +59,15 @@ before(async function () {
   userTwoAddress = await userTwo.getAddress();
   ownerAddress = await owner.getAddress();
 
+  const factoryAddr = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"
+  const WETH = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  const routerContract = await new MockUniswapV2Router02__factory(deployer).deploy(factoryAddr, WETH);
+  const routerAddr = await routerContract.getAddress();
+
   const swapRouterArray = [
     {
       bV2orV3: true,
-      routerAddr: '0x3512ebD0Eb455f2FFDE4908D24F64aba7995951C',
+      routerAddr: routerAddr,
       uniswapV3NonfungiblePositionManager: ZeroAddress,
     },
   ];
